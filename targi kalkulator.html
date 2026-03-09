@@ -1,0 +1,875 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Policz ile możesz zaoszczędzić | Glass & More</title>
+  <meta name="description" content="Kalkulatory oszczędności Glass & More" />
+
+  <style>
+    :root{
+      --bg:#031b14;
+      --bg2:#06261c;
+      --green:#25d366;
+      --green2:#159447;
+      --green3:#8cffb1;
+      --white:#ffffff;
+      --text:#f5fff8;
+      --muted:#b8d8c4;
+      --card:rgba(255,255,255,.08);
+      --stroke:rgba(255,255,255,.12);
+      --shadow:0 20px 60px rgba(0,0,0,.35);
+      --radius:28px;
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family:Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 20% 20%, rgba(37,211,102,.14), transparent 35%),
+        radial-gradient(circle at 80% 20%, rgba(37,211,102,.10), transparent 28%),
+        radial-gradient(circle at 50% 50%, rgba(0,255,128,.08), transparent 45%),
+        linear-gradient(180deg, #05271d 0%, #031610 100%);
+      overflow-x:hidden;
+    }
+
+    .bg-glow{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      z-index:0;
+      background:
+        radial-gradient(500px 300px at 50% 0%, rgba(37,211,102,.16), transparent 70%),
+        radial-gradient(700px 420px at 50% 35%, rgba(20,160,80,.18), transparent 72%);
+      filter:blur(8px);
+    }
+
+    .wrap{
+      position:relative;
+      z-index:1;
+      max-width:1180px;
+      margin:0 auto;
+      padding:32px 18px 64px;
+    }
+
+    .screen{display:none}
+    .screen.active{display:block}
+
+    .hero{
+      min-height:100vh;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      padding:20px 0 30px;
+    }
+
+    .hero-title{
+      max-width:980px;
+      font-weight:900;
+      text-transform:uppercase;
+      line-height:.95;
+      letter-spacing:-.03em;
+      margin:0 0 14px;
+      font-size:clamp(38px, 8vw, 90px);
+    }
+
+    .hero-title .accent{
+      color:var(--green);
+      text-shadow:
+        0 0 12px rgba(37,211,102,.22),
+        0 0 28px rgba(37,211,102,.18);
+    }
+
+    .hero-sub{
+      margin:0 0 28px;
+      font-size:13px;
+      font-weight:800;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      color:#d7f6e2;
+      opacity:.9;
+    }
+
+    .selector-grid{
+      width:100%;
+      max-width:900px;
+      display:grid;
+      grid-template-columns:1fr;
+      gap:18px;
+    }
+
+    .selector-card{
+      position:relative;
+      min-height:220px;
+      border-radius:28px;
+      overflow:hidden;
+      cursor:pointer;
+      border:1px solid rgba(255,255,255,.14);
+      background:#0a241b;
+      box-shadow:var(--shadow);
+      transition:transform .22s ease, box-shadow .22s ease;
+    }
+
+    .selector-card:hover{
+      transform:translateY(-3px);
+      box-shadow:0 28px 70px rgba(0,0,0,.4);
+    }
+
+    .selector-image{
+      position:absolute;
+      inset:0;
+      background-size:cover;
+      background-position:center;
+      filter:brightness(.72);
+      transform:scale(1.02);
+    }
+
+    .selector-overlay{
+      position:absolute;
+      inset:0;
+      background:
+        linear-gradient(180deg, rgba(0,0,0,.18), rgba(0,0,0,.46)),
+        linear-gradient(90deg, rgba(4,23,17,.70), rgba(4,23,17,.18));
+    }
+
+    .selector-content{
+      position:relative;
+      z-index:2;
+      height:100%;
+      display:flex;
+      flex-direction:column;
+      justify-content:flex-end;
+      align-items:flex-start;
+      padding:22px;
+      text-align:left;
+    }
+
+    .selector-badge{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:10px 14px;
+      border-radius:999px;
+      background:#1bb35a;
+      color:#05160f;
+      font-size:14px;
+      font-weight:900;
+      text-transform:uppercase;
+      margin-bottom:14px;
+      box-shadow:0 10px 24px rgba(37,211,102,.22);
+    }
+
+    .selector-name{
+      font-size:clamp(30px, 3vw, 42px);
+      font-weight:900;
+      letter-spacing:-.03em;
+      margin:0;
+      color:#fff;
+      text-shadow:0 2px 10px rgba(0,0,0,.35);
+    }
+
+    .top-actions{
+      display:flex;
+      justify-content:flex-start;
+      margin-bottom:16px;
+    }
+
+    .back-btn{
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.08);
+      color:#fff;
+      padding:12px 16px;
+      border-radius:16px;
+      font-weight:800;
+      cursor:pointer;
+      backdrop-filter:blur(12px);
+      -webkit-backdrop-filter:blur(12px);
+    }
+
+    .calc-center{
+      display:flex;
+      justify-content:center;
+    }
+
+    .panel{
+      width:100%;
+      max-width:760px;
+      border-radius:28px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.07);
+      box-shadow:var(--shadow);
+      backdrop-filter:blur(18px);
+      -webkit-backdrop-filter:blur(18px);
+      padding:22px;
+    }
+
+    .panel h2{
+      margin:0 0 8px;
+      font-size:clamp(28px,4vw,42px);
+      line-height:1;
+      letter-spacing:-.03em;
+      text-align:center;
+    }
+
+    .panel p.lead{
+      margin:0 0 20px;
+      color:var(--muted);
+      line-height:1.5;
+      font-size:15px;
+      text-align:center;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:14px;
+    }
+
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+
+    label{
+      font-size:13px;
+      font-weight:800;
+      color:#eafff1;
+    }
+
+    input, select{
+      width:100%;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.09);
+      color:#fff;
+      border-radius:18px;
+      padding:15px 16px;
+      font-size:16px;
+      outline:none;
+    }
+
+    input::placeholder{color:rgba(255,255,255,.48)}
+
+    .segment{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-bottom:14px;
+    }
+
+    .segment button{
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.07);
+      color:#fff;
+      border-radius:18px;
+      padding:14px;
+      font-weight:900;
+      cursor:pointer;
+      transition:.2s ease;
+    }
+
+    .segment button.active{
+      background:linear-gradient(180deg,var(--green),var(--green2));
+      color:#042014;
+      border-color:transparent;
+      box-shadow:0 14px 26px rgba(37,211,102,.18);
+    }
+
+    .actions{
+      display:flex;
+      justify-content:center;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top:18px;
+    }
+
+    .btn{
+      border:0;
+      padding:14px 18px;
+      border-radius:18px;
+      font-size:15px;
+      font-weight:900;
+      cursor:pointer;
+    }
+
+    .btn-primary{
+      background:linear-gradient(180deg,var(--green),var(--green2));
+      color:#04190f;
+      box-shadow:0 16px 30px rgba(37,211,102,.2);
+    }
+
+    .btn-secondary{
+      background:rgba(255,255,255,.09);
+      color:#fff;
+      border:1px solid rgba(255,255,255,.14);
+    }
+
+    .result-box{
+      display:none;
+      margin-top:22px;
+      animation:fadeUp .5s ease;
+    }
+    .result-box.show{display:block}
+
+    @keyframes fadeUp{
+      from{opacity:0; transform:translateY(18px)}
+      to{opacity:1; transform:translateY(0)}
+    }
+
+    .highlight-saving{
+      border-radius:28px;
+      padding:24px;
+      background:
+        linear-gradient(180deg, rgba(37,211,102,.20), rgba(21,148,71,.12)),
+        rgba(255,255,255,.07);
+      border:1px solid rgba(37,211,102,.22);
+      box-shadow:
+        0 0 0 1px rgba(37,211,102,.04) inset,
+        0 20px 50px rgba(13,92,42,.18);
+      text-align:center;
+      margin-bottom:16px;
+    }
+
+    .highlight-saving .overline{
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:.14em;
+      color:#dfffea;
+      opacity:.95;
+      font-weight:900;
+      margin-bottom:10px;
+    }
+
+    .highlight-saving .value{
+      font-size:clamp(42px, 7vw, 78px);
+      line-height:1;
+      font-weight:900;
+      letter-spacing:-.05em;
+      color:#fff;
+      text-shadow:0 0 24px rgba(37,211,102,.16);
+      margin-bottom:10px;
+    }
+
+    .highlight-saving .desc{
+      margin:0;
+      font-size:15px;
+      color:#eafcf0;
+      opacity:.95;
+    }
+
+    .mini-stats{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:12px;
+      margin-bottom:16px;
+    }
+
+    .mini-stat{
+      padding:16px;
+      border-radius:20px;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.10);
+      text-align:center;
+    }
+
+    .mini-stat .label{
+      font-size:12px;
+      color:var(--muted);
+      margin-bottom:6px;
+      font-weight:700;
+    }
+
+    .mini-stat .val{
+      font-size:28px;
+      font-weight:900;
+      letter-spacing:-.03em;
+    }
+
+    .product-note{
+      padding:16px 18px;
+      border-radius:20px;
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.10);
+      color:#effff4;
+      font-size:15px;
+      line-height:1.5;
+      text-align:center;
+    }
+
+    .product-note strong{color:#fff}
+
+    .form-box{
+      margin-top:20px;
+      text-align:center;
+      padding:22px;
+      border-radius:28px;
+      background:
+        linear-gradient(180deg, rgba(37,211,102,.12), rgba(255,255,255,.06));
+      border:1px solid rgba(37,211,102,.18);
+      box-shadow:0 20px 50px rgba(0,0,0,.28);
+    }
+
+    .form-box h3{
+      margin:0 0 8px;
+      font-size:clamp(26px,4vw,38px);
+      line-height:1.05;
+      letter-spacing:-.03em;
+    }
+
+    .form-box p{
+      margin:0 0 16px;
+      color:#e7fff0;
+      font-size:15px;
+      line-height:1.5;
+    }
+
+    .form-box .reward{
+      color:var(--green3);
+      font-weight:900;
+    }
+
+    .pipedrive-holder{
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      width:100%;
+      min-height:200px;
+      text-align:left;
+    }
+
+    .pipedriveWebForms{
+      width:100%;
+      max-width:560px;
+      margin:0 auto;
+    }
+
+    .small-note{
+      margin-top:12px;
+      font-size:13px;
+      color:#d6f7e1;
+      opacity:.9;
+    }
+
+    @media (min-width: 860px){
+      .selector-grid{
+        grid-template-columns:1fr 1fr;
+      }
+      .grid{
+        grid-template-columns:1fr 1fr;
+      }
+      .mini-stats{
+        grid-template-columns:1fr 1fr 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-glow"></div>
+
+  <div class="wrap">
+    <section id="homeScreen" class="screen active">
+      <div class="hero">
+        <h1 class="hero-title">
+          Policz ile możesz<br>
+          <span class="accent">zaoszczędzić</span><br>
+          korzystając z naszych<br>
+          produktów
+        </h1>
+
+        <p class="hero-sub">Wybierz kalkulator</p>
+
+        <div class="selector-grid">
+          <article class="selector-card" onclick="showScreen('cateringScreen')">
+            <div class="selector-image" style="background-image:url('https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=1200&q=80');"></div>
+            <div class="selector-overlay"></div>
+            <div class="selector-content">
+              <div class="selector-badge">Catering</div>
+              <h2 class="selector-name">Eventy i finger food</h2>
+            </div>
+          </article>
+
+          <article class="selector-card" onclick="showScreen('hotelScreen')">
+            <div class="selector-image" style="background-image:url('https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=1200&q=80');"></div>
+            <div class="selector-overlay"></div>
+            <div class="selector-content">
+              <div class="selector-badge">Obiekt</div>
+              <h2 class="selector-name">Bar / hotel / basen</h2>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="cateringScreen" class="screen">
+      <div class="top-actions">
+        <button class="back-btn" onclick="goHome()">← Wróć</button>
+      </div>
+
+      <div class="calc-center">
+        <div class="panel">
+          <h2>Kalkulator cateringu</h2>
+          <p class="lead">
+            Wpisz dane wydarzenia i zobacz, kiedy zakup naszych produktów się zwraca
+            oraz ile możesz oszczędzić w skali roku.
+          </p>
+
+          <div class="grid">
+            <div class="field">
+              <label for="catEvents">Ile eventów w miesiącu?</label>
+              <input id="catEvents" type="number" min="1" value="8">
+            </div>
+
+            <div class="field">
+              <label for="catServingsPerEvent">Ile porcji na event?</label>
+              <input id="catServingsPerEvent" type="number" min="1" value="120">
+            </div>
+
+            <div class="field" style="grid-column:1 / -1;">
+              <label for="catDisposable">Koszt naczynia jednorazowego za 1 porcję (zł)</label>
+              <input id="catDisposable" type="number" min="0" step="0.01" value="0.65">
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="btn btn-primary" onclick="calcCatering()">Policz oszczędność</button>
+            <button class="btn btn-secondary" onclick="resetCatering()">Wyczyść</button>
+          </div>
+
+          <div id="cateringResult" class="result-box">
+            <div class="highlight-saving">
+              <div class="overline">Twoja oszczędność roczna</div>
+              <div class="value" id="catYearlySaving">0 zł</div>
+              <p class="desc">Tyle możesz zaoszczędzić po roku korzystania z rozwiązania wielorazowego.</p>
+            </div>
+
+            <div class="mini-stats">
+              <div class="mini-stat">
+                <div class="label">Koszt wejścia</div>
+                <div class="val" id="catEntryCost">0 zł</div>
+              </div>
+              <div class="mini-stat">
+                <div class="label">Zwrot inwestycji</div>
+                <div class="val" id="catPayback">0 mies.</div>
+              </div>
+              <div class="mini-stat">
+                <div class="label">Koszt jednorazówek / miesiąc</div>
+                <div class="val" id="catDisposableMonth">0 zł</div>
+              </div>
+            </div>
+
+            <div class="product-note">
+              Potrzebujesz <strong id="catUnitsNeeded">0 szt.</strong> produktu na start.
+              Nasz produkt finger food kosztuje <strong>3,85 zł</strong> za sztukę i wytrzymuje
+              <strong>500 cykli</strong>.
+            </div>
+
+            <div class="form-box">
+              <h3>Zapisz się i odbierz rabat na nasze produkty</h3>
+              <p>
+                Zostaw kontakt, a przygotujemy dla Ciebie ofertę i prześlemy
+                <span class="reward">rabat na nasze produkty</span>.
+              </p>
+
+              <div class="pipedrive-holder">
+                <div class="pipedriveWebForms pd-form"
+                  data-pd-webforms="https://webforms.pipedrive.com/f/6GSi9AG4R16VOJItbny8uvkXbYpcfcMf89NRp6D2mKYHSukZdRFlFbCuEuUTGRKHe3">
+                </div>
+              </div>
+
+              <div class="small-note">
+                Po wysłaniu formularza wrócisz na stronę główną z wyborem kalkulatora.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="hotelScreen" class="screen">
+      <div class="top-actions">
+        <button class="back-btn" onclick="goHome()">← Wróć</button>
+      </div>
+
+      <div class="calc-center">
+        <div class="panel">
+          <h2>Bar / hotel / basen</h2>
+          <p class="lead">
+            Wybierz produkt, podaj ile sztuk potrzebujesz jednocześnie i ile napojów serwujesz miesięcznie.
+            To pokaże realny koszt wejścia i oszczędność.
+          </p>
+
+          <div class="segment">
+            <button id="hotelTypeGlassBtn" class="active" onclick="setHotelType('glass')">Szklanki</button>
+            <button id="hotelTypeWineBtn" onclick="setHotelType('wine')">Kieliszki</button>
+          </div>
+
+          <div class="grid">
+            <div class="field">
+              <label for="hotelUnits">Ile sztuk potrzebujesz naraz?</label>
+              <input id="hotelUnits" type="number" min="1" value="60">
+            </div>
+
+            <div class="field">
+              <label for="hotelServings">Ile napojów / serwowań miesięcznie?</label>
+              <input id="hotelServings" type="number" min="1" value="1500">
+            </div>
+
+            <div class="field" style="grid-column:1 / -1;">
+              <label for="hotelDisposable">Koszt jednorazowego naczynia za 1 użycie (zł)</label>
+              <input id="hotelDisposable" type="number" min="0" step="0.01" value="0.75">
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="btn btn-primary" onclick="calcHotel()">Policz oszczędność</button>
+            <button class="btn btn-secondary" onclick="resetHotel()">Wyczyść</button>
+          </div>
+
+          <div id="hotelResult" class="result-box">
+            <div class="highlight-saving">
+              <div class="overline">Twoja oszczędność roczna</div>
+              <div class="value" id="hotelYearlySaving">0 zł</div>
+              <p class="desc">Tyle możesz zaoszczędzić rocznie po wdrożeniu rozwiązania wielorazowego.</p>
+            </div>
+
+            <div class="mini-stats">
+              <div class="mini-stat">
+                <div class="label">Koszt wejścia</div>
+                <div class="val" id="hotelEntryCost">0 zł</div>
+              </div>
+              <div class="mini-stat">
+                <div class="label">Zwrot inwestycji</div>
+                <div class="val" id="hotelPayback">0 mies.</div>
+              </div>
+              <div class="mini-stat">
+                <div class="label">Koszt jednorazówek / miesiąc</div>
+                <div class="val" id="hotelDisposableMonth">0 zł</div>
+              </div>
+            </div>
+
+            <div class="product-note" id="hotelProductNote">
+              Potrzebujesz <strong>60 szt.</strong> na start. Produkt kosztuje <strong>5,79 zł</strong>
+              i wytrzymuje <strong>500 cykli</strong>.
+            </div>
+
+            <div class="form-box">
+              <h3>Zapisz się i odbierz rabat na nasze produkty</h3>
+              <p>
+                Wypełnij formularz, a prześlemy Ci ofertę i
+                <span class="reward">rabat na nasze produkty</span>.
+              </p>
+
+              <div class="pipedrive-holder">
+                <div class="pipedriveWebForms pd-form"
+                  data-pd-webforms="https://webforms.pipedrive.com/f/6GSi9AG4R16VOJItbny8uvkXbYpcfcMf89NRp6D2mKYHSukZdRFlFbCuEuUTGRKHe3">
+                </div>
+              </div>
+
+              <div class="small-note">
+                Po zapisaniu wrócisz do strony głównej i możesz wybrać drugi kalkulator.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="https://webforms.pipedrive.com/f/loader"></script>
+
+  <script>
+    let hotelType = 'glass';
+
+    function money(v){
+      return new Intl.NumberFormat('pl-PL', {
+        style: 'currency',
+        currency: 'PLN',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(v);
+    }
+
+    function animateValue(el, start, end, isMoney = true, suffix = ''){
+      const duration = 1200;
+      const startTime = performance.now();
+
+      function update(now){
+        const progress = Math.min((now - startTime) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = start + (end - start) * eased;
+
+        if(isMoney){
+          el.textContent = money(current);
+        } else {
+          el.textContent = current.toFixed(1).replace('.', ',') + suffix;
+        }
+
+        if(progress < 1){
+          requestAnimationFrame(update);
+        } else {
+          if(isMoney){
+            el.textContent = money(end);
+          } else {
+            el.textContent = end.toFixed(1).replace('.', ',') + suffix;
+          }
+        }
+      }
+
+      requestAnimationFrame(update);
+    }
+
+    function showScreen(id){
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function goHome(){
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById('homeScreen').classList.add('active');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function resetCatering(){
+      document.getElementById('catEvents').value = 8;
+      document.getElementById('catServingsPerEvent').value = 120;
+      document.getElementById('catDisposable').value = 0.65;
+      document.getElementById('cateringResult').classList.remove('show');
+    }
+
+    function calcCatering(){
+      const events = parseFloat(document.getElementById('catEvents').value || 0);
+      const servingsPerEvent = parseFloat(document.getElementById('catServingsPerEvent').value || 0);
+      const disposable = parseFloat(document.getElementById('catDisposable').value || 0);
+
+      if(events <= 0 || servingsPerEvent <= 0 || disposable < 0){
+        alert('Uzupełnij poprawnie wszystkie pola.');
+        return;
+      }
+
+      const unitsNeeded = servingsPerEvent;
+      const unitPrice = 3.85;
+      const cycles = 500;
+
+      const entryCost = unitsNeeded * unitPrice;
+      const disposableMonth = events * servingsPerEvent * disposable;
+      const disposableYear = disposableMonth * 12;
+
+      const totalPossibleUses = unitsNeeded * cycles;
+      const yearlyUses = events * servingsPerEvent * 12;
+
+      const yearlySaving = disposableYear - entryCost;
+      const monthlySavingAverage = yearlySaving / 12;
+      const paybackMonths = disposableMonth > 0 ? entryCost / disposableMonth : 0;
+
+      document.getElementById('catUnitsNeeded').textContent = unitsNeeded + ' szt.';
+      document.getElementById('cateringResult').classList.add('show');
+
+      animateValue(document.getElementById('catYearlySaving'), 0, yearlySaving, true);
+      animateValue(document.getElementById('catEntryCost'), 0, entryCost, true);
+      animateValue(document.getElementById('catDisposableMonth'), 0, disposableMonth, true);
+      animateValue(document.getElementById('catMonthlySaving'), 0, monthlySavingAverage, true);
+      animateValue(document.getElementById('catPayback'), 0, paybackMonths, false, ' mies.');
+
+      setTimeout(() => {
+        document.getElementById('cateringResult').scrollIntoView({ behavior:'smooth', block:'start' });
+      }, 100);
+    }
+
+    function setHotelType(type){
+      hotelType = type;
+      document.getElementById('hotelTypeGlassBtn').classList.toggle('active', type === 'glass');
+      document.getElementById('hotelTypeWineBtn').classList.toggle('active', type === 'wine');
+    }
+
+    function resetHotel(){
+      document.getElementById('hotelUnits').value = 60;
+      document.getElementById('hotelServings').value = 1500;
+      document.getElementById('hotelDisposable').value = 0.75;
+      setHotelType('glass');
+      document.getElementById('hotelResult').classList.remove('show');
+      document.getElementById('hotelProductNote').innerHTML =
+        'Potrzebujesz <strong>60 szt.</strong> na start. Produkt kosztuje <strong>5,79 zł</strong> i wytrzymuje <strong>500 cykli</strong>.';
+    }
+
+    function calcHotel(){
+      const units = parseFloat(document.getElementById('hotelUnits').value || 0);
+      const servings = parseFloat(document.getElementById('hotelServings').value || 0);
+      const disposable = parseFloat(document.getElementById('hotelDisposable').value || 0);
+
+      if(units <= 0 || servings <= 0 || disposable < 0){
+        alert('Uzupełnij poprawnie wszystkie pola.');
+        return;
+      }
+
+      let price = 5.79;
+      let cycles = 500;
+
+      if(hotelType === 'wine'){
+        price = 20.73;
+        cycles = 350;
+      }
+
+      const entryCost = units * price;
+      const disposableMonth = servings * disposable;
+      const disposableYear = disposableMonth * 12;
+
+      const yearlySaving = disposableYear - entryCost;
+      const paybackMonths = disposableMonth > 0 ? entryCost / disposableMonth : 0;
+
+      document.getElementById('hotelResult').classList.add('show');
+      document.getElementById('hotelProductNote').innerHTML =
+        `Potrzebujesz <strong>${units} szt.</strong> na start. Produkt kosztuje <strong>${money(price)}</strong> i wytrzymuje <strong>${cycles} cykli</strong>.`;
+
+      animateValue(document.getElementById('hotelYearlySaving'), 0, yearlySaving, true);
+      animateValue(document.getElementById('hotelEntryCost'), 0, entryCost, true);
+      animateValue(document.getElementById('hotelDisposableMonth'), 0, disposableMonth, true);
+      animateValue(document.getElementById('hotelMonthlySaving'), 0, yearlySaving / 12, true);
+      animateValue(document.getElementById('hotelPayback'), 0, paybackMonths, false, ' mies.');
+
+      setTimeout(() => {
+        document.getElementById('hotelResult').scrollIntoView({ behavior:'smooth', block:'start' });
+      }, 100);
+    }
+
+    function watchPipedriveSuccess(){
+      document.querySelectorAll('.pd-form').forEach((target) => {
+        const observer = new MutationObserver(() => {
+          const txt = (target.innerText || '').toLowerCase();
+          const html = (target.innerHTML || '').toLowerCase();
+
+          const success =
+            txt.includes('dziękuj') ||
+            txt.includes('dziekuj') ||
+            txt.includes('thank you') ||
+            txt.includes('wysłano') ||
+            txt.includes('submitted') ||
+            html.includes('success');
+
+          if(success){
+            setTimeout(() => {
+              goHome();
+            }, 1200);
+          }
+        });
+
+        observer.observe(target, {
+          childList:true,
+          subtree:true,
+          characterData:true
+        });
+      });
+    }
+
+    window.addEventListener('load', () => {
+      setTimeout(watchPipedriveSuccess, 1200);
+    });
+  </script>
+</body>
+</html>
