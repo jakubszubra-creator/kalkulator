@@ -258,7 +258,7 @@
 
     .segment{
       display:grid;
-      grid-template-columns:1fr 1fr;
+      grid-template-columns:1fr 1fr 1fr;
       gap:10px;
       margin-bottom:14px;
     }
@@ -456,6 +456,12 @@
       opacity:.9;
     }
 
+    @media (max-width: 640px){
+      .segment{
+        grid-template-columns:1fr;
+      }
+    }
+
     @media (min-width: 860px){
       .selector-grid{
         grid-template-columns:1fr 1fr;
@@ -599,7 +605,7 @@
       <div class="calc-center">
         <div class="panel">
           <h2>Bar / hotel / basen</h2>
-          <p class="lead">
+          <p class="lead" id="hotelLead">
             Wybierz produkt, podaj ile sztuk potrzebujesz jednocześnie i ile napojów serwujesz miesięcznie.
             To pokaże realny koszt wejścia i oszczędność.
           </p>
@@ -607,21 +613,22 @@
           <div class="segment">
             <button id="hotelTypeGlassBtn" class="active" onclick="setHotelType('glass')">Szklanki</button>
             <button id="hotelTypeWineBtn" onclick="setHotelType('wine')">Kieliszki</button>
+            <button id="hotelTypePlateBtn" onclick="setHotelType('plate')">Talerze</button>
           </div>
 
           <div class="grid">
             <div class="field">
-              <label for="hotelUnits">Ile sztuk potrzebujesz naraz?</label>
+              <label id="hotelUnitsLabel" for="hotelUnits">Ile sztuk potrzebujesz naraz?</label>
               <input id="hotelUnits" type="number" min="1" value="60">
             </div>
 
             <div class="field">
-              <label for="hotelServings">Ile napojów / serwowań miesięcznie?</label>
+              <label id="hotelServingsLabel" for="hotelServings">Ile napojów / serwowań miesięcznie?</label>
               <input id="hotelServings" type="number" min="1" value="1500">
             </div>
 
             <div class="field" style="grid-column:1 / -1;">
-              <label for="hotelDisposable">Koszt jednorazowego naczynia za 1 użycie (zł)</label>
+              <label id="hotelDisposableLabel" for="hotelDisposable">Koszt jednorazowego naczynia za 1 użycie (zł)</label>
               <input id="hotelDisposable" type="number" min="0" step="0.01" value="0.75">
             </div>
           </div>
@@ -696,6 +703,8 @@
     }
 
     function animateValue(el, start, end, isMoney = true, suffix = ''){
+      if(!el) return;
+
       const duration = 1200;
       const startTime = performance.now();
 
@@ -760,12 +769,7 @@
       const entryCost = unitsNeeded * unitPrice;
       const disposableMonth = events * servingsPerEvent * disposable;
       const disposableYear = disposableMonth * 12;
-
-      const totalPossibleUses = unitsNeeded * cycles;
-      const yearlyUses = events * servingsPerEvent * 12;
-
       const yearlySaving = disposableYear - entryCost;
-      const monthlySavingAverage = yearlySaving / 12;
       const paybackMonths = disposableMonth > 0 ? entryCost / disposableMonth : 0;
 
       document.getElementById('catUnitsNeeded').textContent = unitsNeeded + ' szt.';
@@ -774,7 +778,6 @@
       animateValue(document.getElementById('catYearlySaving'), 0, yearlySaving, true);
       animateValue(document.getElementById('catEntryCost'), 0, entryCost, true);
       animateValue(document.getElementById('catDisposableMonth'), 0, disposableMonth, true);
-      animateValue(document.getElementById('catMonthlySaving'), 0, monthlySavingAverage, true);
       animateValue(document.getElementById('catPayback'), 0, paybackMonths, false, ' mies.');
 
       setTimeout(() => {
@@ -784,8 +787,27 @@
 
     function setHotelType(type){
       hotelType = type;
+
       document.getElementById('hotelTypeGlassBtn').classList.toggle('active', type === 'glass');
       document.getElementById('hotelTypeWineBtn').classList.toggle('active', type === 'wine');
+      document.getElementById('hotelTypePlateBtn').classList.toggle('active', type === 'plate');
+
+      const unitsLabel = document.getElementById('hotelUnitsLabel');
+      const servingsLabel = document.getElementById('hotelServingsLabel');
+      const disposableLabel = document.getElementById('hotelDisposableLabel');
+      const lead = document.getElementById('hotelLead');
+
+      if(type === 'plate'){
+        unitsLabel.textContent = 'Ile talerzy potrzebujesz?';
+        servingsLabel.textContent = 'Ile cykli wytrzymuje Twój talerz?';
+        disposableLabel.textContent = 'Ile kosztuje Twój talerz (zł)?';
+        lead.textContent = 'Wybierz talerze, podaj ile sztuk potrzebujesz i jaki talerz używasz dziś. Porównamy koszt całkowity i czas zwrotu.';
+      } else {
+        unitsLabel.textContent = 'Ile sztuk potrzebujesz naraz?';
+        servingsLabel.textContent = 'Ile napojów / serwowań miesięcznie?';
+        disposableLabel.textContent = 'Koszt jednorazowego naczynia za 1 użycie (zł)';
+        lead.textContent = 'Wybierz produkt, podaj ile sztuk potrzebujesz jednocześnie i ile napojów serwujesz miesięcznie. To pokaże realny koszt wejścia i oszczędność.';
+      }
     }
 
     function resetHotel(){
@@ -799,6 +821,46 @@
     }
 
     function calcHotel(){
+      if(hotelType === 'plate'){
+        const units = parseFloat(document.getElementById('hotelUnits').value || 0);
+        const cyclesUser = parseFloat(document.getElementById('hotelServings').value || 0);
+        const priceUser = parseFloat(document.getElementById('hotelDisposable').value || 0);
+
+        if(units <= 0 || cyclesUser <= 0 || priceUser <= 0){
+          alert('Uzupełnij poprawnie wszystkie pola.');
+          return;
+        }
+
+        const ourPrice = 4.98;
+        const ourCycles = 500;
+
+        const userCostPerUse = priceUser / cyclesUser;
+        const ourCostPerUse = ourPrice / ourCycles;
+
+        const totalUses = units * ourCycles;
+        const totalUserCost = totalUses * userCostPerUse;
+        const totalOurCost = units * ourPrice;
+
+        const yearlySaving = totalUserCost - totalOurCost;
+        const monthlyUserCost = totalUserCost / 12;
+        const paybackMonths = monthlyUserCost > 0 ? totalOurCost / monthlyUserCost : 0;
+
+        document.getElementById('hotelResult').classList.add('show');
+        document.getElementById('hotelProductNote').innerHTML =
+          `Potrzebujesz <strong>${units} szt.</strong> na start. Nasz talerz kosztuje <strong>4,98 zł</strong> i wytrzymuje <strong>500 cykli</strong>.`;
+
+        animateValue(document.getElementById('hotelYearlySaving'), 0, yearlySaving, true);
+        animateValue(document.getElementById('hotelEntryCost'), 0, totalOurCost, true);
+        animateValue(document.getElementById('hotelDisposableMonth'), 0, monthlyUserCost, true);
+        animateValue(document.getElementById('hotelPayback'), 0, paybackMonths, false, ' mies.');
+
+        setTimeout(() => {
+          document.getElementById('hotelResult').scrollIntoView({ behavior:'smooth', block:'start' });
+        }, 100);
+
+        return;
+      }
+
       const units = parseFloat(document.getElementById('hotelUnits').value || 0);
       const servings = parseFloat(document.getElementById('hotelServings').value || 0);
       const disposable = parseFloat(document.getElementById('hotelDisposable').value || 0);
@@ -819,7 +881,6 @@
       const entryCost = units * price;
       const disposableMonth = servings * disposable;
       const disposableYear = disposableMonth * 12;
-
       const yearlySaving = disposableYear - entryCost;
       const paybackMonths = disposableMonth > 0 ? entryCost / disposableMonth : 0;
 
@@ -830,7 +891,6 @@
       animateValue(document.getElementById('hotelYearlySaving'), 0, yearlySaving, true);
       animateValue(document.getElementById('hotelEntryCost'), 0, entryCost, true);
       animateValue(document.getElementById('hotelDisposableMonth'), 0, disposableMonth, true);
-      animateValue(document.getElementById('hotelMonthlySaving'), 0, yearlySaving / 12, true);
       animateValue(document.getElementById('hotelPayback'), 0, paybackMonths, false, ' mies.');
 
       setTimeout(() => {
